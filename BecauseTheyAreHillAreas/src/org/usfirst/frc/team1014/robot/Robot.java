@@ -1,6 +1,7 @@
 
 package org.usfirst.frc.team1014.robot;
 
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.command.Command;
@@ -9,14 +10,19 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-
+import org.usfirst.frc.team1014.robot.commands.PIDautodrive;
+import org.usfirst.frc.team1014.robot.commands.PneumaticsOut;
+import org.usfirst.frc.team1014.robot.commands.PneumaticsRepeat;
+import org.usfirst.frc.team1014.robot.commands.PumpUp;
 import org.usfirst.frc.team1014.robot.commands.StartPosCenterScale;
 import org.usfirst.frc.team1014.robot.commands.StartPosCenterSwitch;
 import org.usfirst.frc.team1014.robot.commands.StartPosLeftScale;
 import org.usfirst.frc.team1014.robot.commands.StartPosLeftSwitch;
 import org.usfirst.frc.team1014.robot.commands.StartPosRightScale;
 import org.usfirst.frc.team1014.robot.commands.StartPosRightSwitch;
-import org.usfirst.frc.team1014.robot.subsystems.ExampleSubsystem;
+import org.usfirst.frc.team1014.robot.subsystems.DriveTrain;
+import org.usfirst.frc.team1014.robot.subsystems.IntakeMotors;
+import org.usfirst.frc.team1014.robot.subsystems.PneumaticsSubsystem;
 
 
 /**
@@ -31,13 +37,16 @@ public class Robot extends IterativeRobot {
 	
 	public static OI oi;
 
-	Command autonomousCommand;
-	SendableChooser<Command> chooser = new SendableChooser<>();
-	double FMSAutoData;
-    
-	
-	public static final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
 
+	Command autonomousCommand;
+	SendableChooser chooser;
+	double FMSAutoData;
+
+	public static final DriveTrain driveTrain = new DriveTrain();
+    public static final ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+    public static final PneumaticsSubsystem pneumaticsSubsystem = new PneumaticsSubsystem();
+    public static final IntakeMotors intakeMotors = new IntakeMotors();
+	
 	/**
 	 * This function is run when the robot is first started up and should be
 	 * used for any initialization code.
@@ -46,17 +55,39 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {
 		
 		oi = new OI();
+		chooser = new SendableChooser<Command>();
 		
 		
-	    
 		// chooser.addObject("My Auto", new MyAutoCommand());
-		chooser.addObject("Start Pos Center Scale", new StartPosCenterScale(FMSAutoData));
-		chooser.addObject("Start Pos Center Switch", new StartPosCenterSwitch(FMSAutoData));
-		chooser.addObject("Start Pos Left Scale", new StartPosLeftScale(FMSAutoData));
-		chooser.addObject("Start Pos Left Switch", new StartPosLeftSwitch(FMSAutoData));
-		chooser.addObject("Start Pos Right Scale", new StartPosRightScale(FMSAutoData));
-		chooser.addObject("Start Pos Right Switch", new StartPosRightSwitch(FMSAutoData));
+		chooser.addDefault("Pneumatics Out", new PneumaticsOut(3));
+		chooser.addObject("Pneumatics Repeat", new PneumaticsRepeat());
+		chooser.addObject("Pump up", new PumpUp());
+		chooser.addObject("PID straight", new PIDautodrive(6, 0.5));
+		//PIDautodrive(distance, speed)
+
 		SmartDashboard.putData("Auto mode", chooser);
+
+
+		
+		SmartDashboard.putNumber("kP Straight", 0.1);
+		SmartDashboard.putNumber("kI Straight", 0.01);
+		SmartDashboard.putNumber("kP Turn", 0.1);
+		SmartDashboard.putNumber("kI Turn", 0.01);
+		SmartDashboard.putNumber("Speed Damp", 0.01);
+		SmartDashboard.putNumber("Turn Damp", 0.01);
+		SmartDashboard.putNumber("Left Encoder ticks", 0);
+		SmartDashboard.putNumber("Right Encoder ticks", 0);
+		SmartDashboard.putNumber("speedF", driveTrain.driveWithController.speedF);
+		SmartDashboard.putNumber("speedT", driveTrain.driveWithController,speedT);
+		//SmartDashboard.putNumber("RE", driveTrain.backRightMotor.getSelectedSensorPosition(0));
+		//SmartDashboard.putNumber("LE", driveTrain.backLeftMotor.getSelectedSensorPosition(0));
+		//SmartDashboard.putNumber("LEE");
+		//SmartDashboard.putNumber("REE");
+		//SmartDashboard.putNumber("Distance per pulse", 1);
+
+		
+
+
 	}
 
 	/**
@@ -133,7 +164,7 @@ public class Robot extends IterativeRobot {
 		
 		//Here we would use chooser to input the starting position and choice of scale 
 		//or switch rather than to select the auto command
-		autonomousCommand = chooser.getSelected();
+		autonomousCommand = (Command) chooser.getSelected();
 		// schedule the autonomous command (example)
 		if (autonomousCommand != null)
 			autonomousCommand.start();
@@ -163,13 +194,19 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void teleopPeriodic() {
 		Scheduler.getInstance().run();
+		//double REE = driveTrain.backRightMotor.getSelectedSensorPosition(0);
+		//double LEE = driveTrain.backLeftMotor.getSelectedSensorPosition(0);
+	
+		//SmartDashboard.putNumber("REE", REE);
+		//SmartDashboard.putNumber("LEE",LEE);
 	}
 
 	/**
 	 * This function is called periodically during test mode
 	 */
+
 	@Override
 	public void testPeriodic() {
-		LiveWindow.run();
+
 	}
 }
